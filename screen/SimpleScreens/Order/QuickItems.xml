@@ -28,6 +28,12 @@ along with this software (see the LICENSE.md file). If not, see
         <default-response url="."/>
     </transition>
 
+    <transition name="addDiscount">
+        <actions>
+            <set field="discountAdded" value="Y"/>
+        </actions>
+    </transition>
+
     <actions>
         <entity-find-one entity-name="mantle.order.OrderHeader" value-field="orderHeader"/>
 
@@ -136,29 +142,39 @@ along with this software (see the LICENSE.md file). If not, see
 
                 <field name="productId"><default-field><hidden/></default-field></field>
 
+                <field name="orderItemSeqId"><header-field title="Item" show-order-by="true"/>
+                    <default-field><display/></default-field></field>
                 <field name="pseudoId"><header-field show-order-by="true"/>
                     <default-field><link url="editProduct" text="${pseudoId}" link-type="anchor"/></default-field></field>
                 <field name="productName"><header-field show-order-by="true"/>
                     <default-field><link url="editProduct" text="${productName}" link-type="anchor"/></default-field></field>
-                <field name="orderItemSeqId"><header-field title="Item" show-order-by="true"/>
-                    <default-field><display/></default-field></field>
                 <field name="listPrice" from="priceOut.listPrice" align="right"><default-field>
                     <display currency-unit-field="orderHeader.currencyUomId" also-hidden="false"/></default-field></field>
                 <field name="calcPrice" from="priceOut.price" align="right"><default-field>
                     <display currency-unit-field="orderHeader.currencyUomId" also-hidden="false"/></default-field></field>
-                <field name="unitAmount" align="right">
+<!--                <field name="unitAmount" align="right">
                     <conditional-field title="Price" condition="productId">
                         <text-line size="8" format="#,##0.00"/></conditional-field>
                     <default-field title="Price"><display/></default-field>
-                </field>
+                </field>-->
                 <field name="quantity" align="right"><conditional-field condition="productId"><text-line size="4"/></conditional-field>
                     <default-field><display/></default-field></field>
                 <field name="itemQuantity" from="quantity" align="right">
                     <default-field title="Cur Qty"><display also-hidden="false"/></default-field></field>
                 <field name="itemTotal" from="(quantity?:0.0)*(unitAmount?:0.0)" align="right">
                     <default-field title="Cur Total"><display currency-unit-field="orderHeader.currencyUomId" also-hidden="false"/></default-field></field>
-                <field name="test field" align="right"><conditional-field condition="productId"/>
-                    <default-field title="discount amt"/></field>
+                <field name="addDiscount">
+                    <default-field title="Add Discount"><submit/></default-field></field>
+                <field name="discountAdded">
+                    <default-field title="Discount"><display/></default-field>
+                </field>
+                <field name="testField"><conditional-field condition="discountAdded"></conditional-field>
+                    <default-field><display/></default-field></field>
+
+                <form-list-column>
+                    <field-ref name="pseudoId"/>
+                    <field-ref name="testField"/>
+                </form-list-column>
 
                 <field name="submitButton"><default-field title="Set Quantities"><submit/></default-field></field>
             </form-list>
