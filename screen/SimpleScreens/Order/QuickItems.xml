@@ -28,11 +28,8 @@ along with this software (see the LICENSE.md file). If not, see
         <default-response url="."/>
     </transition>
 
-    <transition name="addDiscount">
-        <actions>
-            <set field="discountAdded" value="Y"/>
-        </actions>
-    </transition>
+    <transition name="createItem"><service-call name="mantle.order.OrderServices.create#OrderItem"/>
+        <default-response url="."/></transition>
 
     <actions>
         <entity-find-one entity-name="mantle.order.OrderHeader" value-field="orderHeader"/>
@@ -125,6 +122,37 @@ along with this software (see the LICENSE.md file). If not, see
             <field-layout><field-row-big><field-ref name="orderPartSeqId"/><field-ref name="productCategoryId"/>
                 <field-ref name="submitButton"/></field-row-big></field-layout>
         </form-single>
+        <container-row>
+            <row-col>
+                <container-dialog id="AddOrderDiscountContainer" button-text="Add Other Item">
+                    <form-single name="AddOrderDiscountForm" transition="createItem" focus-field="itemTypeEnumId">
+                        <field name="orderId" from="orderId"><default-field><hidden/></default-field></field>
+                        <field name="orderPartSeqId" from="orderPartSeqId"><default-field><hidden/></default-field></field>
+                        <field name="requireInventory"><default-field><hidden default-value="false"/></default-field></field>
+
+                        <field name="parentItemSeqId"><default-field title="Parent Item"><hidden/></default-field></field>
+                        <field name="itemTypeEnumId"><default-field title="Item Type">
+                            <drop-down no-current-selected-key="ItemDiscount">
+                                <entity-options key="${enumId}" text="${description}">
+                                    <entity-find entity-name="moqui.basic.EnumAndGroup" list="itemTypeEnumList">
+                                        <econdition field-name="enumId" operator="in" value="ItemDiscount,ItemDiscountAppease,ItemSupplierDiscount"/>
+                                        <order-by field-name="description"/></entity-find></entity-options>
+                            </drop-down>
+                        </default-field></field>
+                        <field name="itemDescription"><default-field title="Description"><text-line size="60"/></default-field></field>
+                        <field name="quantity"><default-field><text-line size="8" default-value="1"/></default-field></field>
+                        <field name="unitAmount"><default-field title="Price" tooltip="If entering a discount be sure to use a '-' before the price.">
+                            <text-line size="10"/>
+                            <label text="If entering a discount be sure to use a '-' before the price."/>
+                        </default-field></field>
+                        <field name="requiredByDate"><default-field><date-time format="yyyy-MM-dd HH:mm"/></default-field></field>
+
+                        <field name="submitButton2"><default-field title="Add"><submit/></default-field></field>
+                    </form-single>
+                </container-dialog>
+            </row-col>
+        </container-row>
+
 
         <section name="QuickItemSection" condition="productInfoList"><widgets>
             <form-list name="QuickItemList" list="productInfoList" multi="true" transition="setItemQuantities">
@@ -132,6 +160,8 @@ along with this software (see the LICENSE.md file). If not, see
                     <service-call name="mantle.product.PriceServices.get#ProductPrice" out-map="priceOut"
                             in-map="[productId:productId, priceUomId:orderHeader.currencyUomId,
                                 productStoreId:productStoreId, customerPartyId:orderPart.customerPartyId]"/>
+                    <set field="discount" value="Add discount"/>
+
                 </row-actions>
 
                 <hidden-parameters>
@@ -140,6 +170,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <parameter name="productCategoryId"/>
                 </hidden-parameters>
 
+                <!--<field name="submitButton"><default-field title="Save Changes"><submit/></default-field></field>-->
                 <field name="productId"><default-field><hidden/></default-field></field>
 
                 <field name="orderItemSeqId"><header-field title="Item" show-order-by="true"/>
@@ -163,20 +194,45 @@ along with this software (see the LICENSE.md file). If not, see
                     <default-field title="Cur Qty"><display also-hidden="false"/></default-field></field>
                 <field name="itemTotal" from="(quantity?:0.0)*(unitAmount?:0.0)" align="right">
                     <default-field title="Cur Total"><display currency-unit-field="orderHeader.currencyUomId" also-hidden="false"/></default-field></field>
-                <field name="addDiscount">
-                    <default-field title="Add Discount"><submit/></default-field></field>
-                <field name="discountAdded">
-                    <default-field title="Discount"><display/></default-field>
+                <field name="addDiscount"><conditional-field condition="!itemTotal"/>
+                    <default-field title="">
+                        <container-dialog id="AddDiscount" button-text="Add Discount" width="800">
+                            <form-single name="AddDiscountForm" transition="createItem" focus-field="itemTypeEnumId" dynamic="true">
+                                <field name="orderId" from="orderId"><default-field><display/></default-field></field>
+                                <field name="orderPartSeqId"  from="orderPartSeqId"><default-field><display/></default-field></field>
+                                <field name="requireInventory"><default-field><hidden default-value="false"/></default-field></field>
+                                <field name="parentItemSeqId"><default-field title="Parent Item"><display/></default-field></field>
+                                <field name="itemTypeEnumId"><default-field title="Item Type">
+                                    <drop-down no-current-selected-key="ItemDiscount">
+                                        <entity-options key="${enumId}" text="${description}">
+                                            <entity-find entity-name="moqui.basic.EnumAndGroup" list="itemTypeEnumList">
+                                                <econdition field-name="enumId" operator="in" value="ItemDiscount,ItemDiscountAppease,ItemSupplierDiscount"/>
+                                                <order-by field-name="description"/></entity-find></entity-options>
+                                    </drop-down></default-field></field>
+                                <field name="discDescription" not-null="true"><default-field title="Description"><text-line size="60" default-value=""/></default-field></field>
+                                <field name="discQuantity"><default-field><text-line size="8" default-value="0"/></default-field></field>
+                                <field name="discountPct"><default-field title="Discount %">
+                                    <drop-down no-current-selected-key="0">
+                                        <option key=".5" text="5%"/>
+                                        <option key=".10" text="10%"/>
+                                        <option key=".15" text="15%"/>
+                                        <option key=".20" text="20%"/>
+                                        <option key=".25" text="25%"/>
+                                        <option key=".30" text="30%"/>
+                                        <option key=".35" text="35%"/>
+                                        <option key=".50" text="50%"/>
+                                        <option key="custom" text="Custom%"/>
+                                    </drop-down>
+                                </default-field></field>
+                                <field name="custDiscPct"><conditional-field condition="discountPct=custom"/></field>
+
+                                <field name="submitButton"><default-field title="Save Changes"><submit/></default-field></field>
+                            </form-single>
+                        </container-dialog>
+                    </default-field>
                 </field>
-                <field name="testField"><conditional-field condition="discountAdded"></conditional-field>
-                    <default-field><display/></default-field></field>
 
-                <form-list-column>
-                    <field-ref name="pseudoId"/>
-                    <field-ref name="testField"/>
-                </form-list-column>
-
-                <field name="submitButton"><default-field title="Set Quantities"><submit/></default-field></field>
+                <field name="submitButton"><default-field title="Save Changes"><submit/></default-field></field>
             </form-list>
         </widgets></section>
     </widgets>
