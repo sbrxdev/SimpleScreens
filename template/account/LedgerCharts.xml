@@ -29,7 +29,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <drop-down><list-options list="orgList" key="${partyId}" text="PartyNameTemplate"/></drop-down>
                 </default-field></field>
                 <field name="timePeriodTypeId"><default-field title=""><drop-down><option key="FiscalMonth" text="Month"/>
-                    <option key="FiscalQuarter" text="Quarter"/></drop-down></default-field></field>
+                    <option key="FiscalQuarter" text="Quarter"/><option key="FiscalYear" text="Year"/></drop-down></default-field></field>
                 <field name="periods"><default-field title=""><text-line size="2" default-value="13"/></default-field></field>
                 <field name="thruDate"><default-field title=""><date-time type="date"/></default-field></field>
                 <field name="setOrg"><default-field title="View Charts"><submit/></default-field></field>
